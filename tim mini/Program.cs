@@ -1616,25 +1616,27 @@ PhysicalGunObject/
         long TransferItem(string itype, string isub, long amount, IMyInventory fromInven, IMyInventory toInven)
         {
             bool debug = debugLogic.Contains("sorting");
-            List<IMyInventoryItem> stacks;
             int s;
             VRage.MyFixedPoint remaining, moved;
             uint id;
             //	double volume;
             string stype, ssub;
-
+            List<MyInventoryItem> stackTransfer = new List<MyInventoryItem>();
+            List<MyInventoryItem> stackAfterTransfer = new List<MyInventoryItem>();
             remaining = (VRage.MyFixedPoint)(amount / 1e6);
-            stacks = fromInven.GetItems();
-            s = Math.Min(typeSubData[itype][isub].invenSlot[fromInven], stacks.Count);
+            fromInven.GetItems(stackTransfer,null);
+            s = Math.Min(typeSubData[itype][isub].invenSlot[fromInven], stackTransfer.Count);
+
+
             while (remaining > 0 & s-- > 0)
             {
-                stype = "" + stacks[s].Content.TypeId;
+                stype = "" + stackTransfer[s].Type.ToString();
                 stype = stype.Substring(stype.LastIndexOf('_') + 1).ToUpper();
-                ssub = stacks[s].Content.SubtypeId.ToString().ToUpper();
+                ssub = stackTransfer[s].Type.SubtypeId.ToString().ToUpper();
                 if (stype == itype & ssub == isub)
                 {
-                    moved = stacks[s].Amount;
-                    id = stacks[s].ItemId;
+                    moved = stackTransfer[s].Amount;
+                    id = stackTransfer[s].ItemId;
                     //			volume = (double)fromInven.CurrentVolume;
                     if (fromInven == toInven)
                     {
@@ -1644,9 +1646,9 @@ PhysicalGunObject/
                     }
                     else if (fromInven.TransferItemTo(toInven, s, null, true, remaining))
                     {
-                        stacks = fromInven.GetItems();
-                        if (s < stacks.Count && stacks[s].ItemId == id)
-                            moved -= stacks[s].Amount;
+                        fromInven.GetItems(stackAfterTransfer,null);
+                        if (s < stackAfterTransfer.Count && stackAfterTransfer[s].ItemId == id)
+                            moved -= stackAfterTransfer[s].Amount;
                         if (moved <= 0)
                         {
                             if ((double)toInven.CurrentVolume < (double)toInven.MaxVolume / 2 & toInven.Owner != null)
@@ -1676,6 +1678,7 @@ PhysicalGunObject/
                         s = 0;
                     }
                 }
+
             }
 
             return amount - (long)((double)remaining * 1e6 + 0.5);
@@ -1698,7 +1701,7 @@ PhysicalGunObject/
             int level, priority;
             List<string> ores = new List<string>();
             Dictionary<string, int> oreLevel = new Dictionary<string, int>();
-            List<IMyInventoryItem> stacks;
+            List<MyInventoryItem> stacks = new List<MyInventoryItem>();
             double speed, oldspeed;
             Work work;
             bool ready;
@@ -1727,19 +1730,21 @@ PhysicalGunObject/
             foreach (IMyRefinery rfn in refineryOres.Keys)
             {
                 itype = itype2 = isub = isub2 = "";
-                stacks = rfn.GetInventory(0).GetItems();
+
+                rfn.GetInventory(0).GetItems(stacks,null);
+                 
                 if (stacks.Count > 0)
                 {
-                    itype = "" + stacks[0].Content.TypeId;
+                    itype = "" + stacks[0].Type.ToString();
                     itype = itype.Substring(itype.LastIndexOf('_') + 1).ToUpper();
-                    isub = stacks[0].Content.SubtypeId.ToString().ToUpper();
+                    isub = stacks[0].Type.SubtypeId.ToString().ToUpper();
                     if (itype == "ORE" & oreLevel.ContainsKey(isub))
                         oreLevel[isub] += Math.Max(1, oreLevel[isub] / refineryOres.Count);
                     if (stacks.Count > 1)
                     {
-                        itype2 = "" + stacks[1].Content.TypeId;
+                        itype2 = "" + stacks[1].Type.ToString();
                         itype2 = itype2.Substring(itype2.LastIndexOf('_') + 1).ToUpper();
-                        isub2 = stacks[1].Content.SubtypeId.ToString().ToUpper();
+                        isub2 = stacks[1].Type.SubtypeId.ToString().ToUpper();
                         if (itype2 == "ORE" & oreLevel.ContainsKey(isub2))
                             oreLevel[isub2] += Math.Max(1, oreLevel[isub2] / refineryOres.Count);
                         AddInvenRequest(rfn, 0, itype2, isub2, -2, (long)((double)stacks[1].Amount * 1e6 + 0.5));
@@ -1979,7 +1984,7 @@ PhysicalGunObject/
         void ScanProduction()
         {
             List<IMyTerminalBlock> blocks1 = new List<IMyTerminalBlock>(), blocks2 = new List<IMyTerminalBlock>();
-            List<IMyInventoryItem> stacks;
+            List<MyInventoryItem> stacks = new List<MyInventoryItem>();
             string itype, isub, isubIng;
             List<MyProductionItem> queue = new List<MyProductionItem>();
             Item item;
@@ -1990,12 +1995,12 @@ PhysicalGunObject/
             GridTerminalSystem.GetBlocksOfType<IMyRefinery>(blocks2, blk => dockedgrids.Contains(blk.CubeGrid));
             foreach (IMyFunctionalBlock blk in blocks1.Concat(blocks2))
             {
-                stacks = blk.GetInventory(0).GetItems();
+                blk.GetInventory(0).GetItems(stacks,null);
                 if (stacks.Count > 0 & blk.Enabled)
                 {
-                    itype = "" + stacks[0].Content.TypeId;
+                    itype = "" + stacks[0].Type.ToString();
                     itype = itype.Substring(itype.LastIndexOf('_') + 1).ToUpper();
-                    isub = stacks[0].Content.SubtypeId.ToString().ToUpper();
+                    isub = stacks[0].Type.SubtypeId.ToString().ToUpper();
                     if (typeSubs.ContainsKey(itype) & subTypes.ContainsKey(isub))
                         typeSubData[itype][isub].producers.Add(blk);
                     if (itype == "ORE" & (ORE_PRODUCT.TryGetValue(isub, out isubIng) ? isubIng : (isubIng = isub)) != "" & typeSubData["INGOT"].ContainsKey(isubIng))
