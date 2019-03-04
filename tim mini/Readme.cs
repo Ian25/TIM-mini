@@ -14,6 +14,7 @@
 
      Steam Workshop: http://steamcommunity.com/sharedfiles/filedetails/?id=546825757
      User's Guide:   http://steamcommunity.com/sharedfiles/filedetails/?id=546909551
+     Therian's Updated version: https://steamcommunity.com/sharedfiles/filedetails/?id=1552258272 
 
 
      **********************

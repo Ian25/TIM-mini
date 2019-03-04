@@ -570,7 +570,7 @@ PhysicalGunObject/
             System.Text.RegularExpressions.Match match;
             int i, s, n;
             IMyInventory inven;
-            List<IMyInventoryItem> stacks;
+            List<MyInventoryItem> stacks = new List<MyInventoryItem>();
             string itype, isub;
             ItemData data;
             long amount, total;
@@ -609,27 +609,26 @@ PhysicalGunObject/
                         invenLocked.Add(block.GetInventory(((block as IMyAssembler).Mode == MyAssemblerMode.Disassembly) ? 1 : 0));
                     }
                 }
-
                 i = block.InventoryCount;
                 while (i-- > 0)
                 {
                     inven = block.GetInventory(i);
-                    stacks = inven.GetItems();
+                    inven.GetItems( stacks ,null);
                     s = stacks.Count;
-                    while (s-- > 0)
-                    {
+                    foreach (MyInventoryItem stack in stacks) {
+                        s--;
                         // identify the stacked item
-                        itype = "" + stacks[s].Content.TypeId;
+                        itype = "" + stack.Type.ToString();
                         itype = itype.Substring(itype.LastIndexOf('_') + 1);
-                        isub = stacks[s].Content.SubtypeId.ToString();
+                        isub = stack.Type.SubtypeId.ToString();
 
                         // new type or subtype?
-                        ItemData.Init(itype, isub, 0L, 0.0f, stacks[s].Content.SubtypeId.ToString(), null);
+                        ItemData.Init(itype, isub, 0L, 0.0f, stack.Type.SubtypeId.ToString(), null);
                         itype = itype.ToUpper();
                         isub = isub.ToUpper();
 
                         // update amounts
-                        amount = (long)((double)stacks[s].Amount * 1e6);
+                        amount = (long)((double)stack.Amount * 1e6);
                         typeAmount[itype] += amount;
                         data = typeSubData[itype][isub];
                         data.amount += amount;
@@ -637,7 +636,7 @@ PhysicalGunObject/
                         data.invenTotal.TryGetValue(inven, out total);
                         data.invenTotal[inven] = total + amount;
                         data.invenSlot.TryGetValue(inven, out n);
-                        data.invenSlot[inven] = Math.Max(n, s + 1);
+                        data.invenSlot[inven] = Math.Max(n, s + 1);                       
                     }
                 }
             }
@@ -648,30 +647,33 @@ PhysicalGunObject/
         {
             string itype, isub;
             long amount;
+            List<MyInventoryItem> stacksHidden = new List<MyInventoryItem>();
+            List<MyInventoryItem> stacksLocked = new List<MyInventoryItem>();
             ItemData data;
 
             foreach (IMyInventory inven in invenHidden)
             {
-                foreach (IMyInventoryItem stack in inven.GetItems())
+                inven.GetItems(stacksHidden, null);
+                foreach (MyInventoryItem stack in stacksHidden)
                 {
-                    itype = "" + stack.Content.TypeId;
+                    itype = "" + stack.Type.ToString();
                     itype = itype.Substring(itype.LastIndexOf('_') + 1).ToUpper();
-                    isub = stack.Content.SubtypeId.ToString().ToUpper();
-
+                    isub = stack.Type.SubtypeId.ToString().ToUpper();
                     amount = (long)((double)stack.Amount * 1e6);
                     typeAmount[itype] -= amount;
                     typeSubData[itype][isub].amount -= amount;
                 }
+                stacksHidden.Clear();
             }
 
             foreach (IMyInventory inven in invenLocked)
             {
-                foreach (IMyInventoryItem stack in inven.GetItems())
+                inven.GetItems(stacksLocked, null);
+                foreach (MyInventoryItem stack in stacksLocked)
                 {
-                    itype = "" + stack.Content.TypeId;
+                    itype = "" + stack.Type.ToString();
                     itype = itype.Substring(itype.LastIndexOf('_') + 1).ToUpper();
-                    isub = stack.Content.SubtypeId.ToString().ToUpper();
-
+                    isub = stack.Type.SubtypeId.ToString().ToUpper();
                     amount = (long)((double)stack.Amount * 1e6);
                     data = typeSubData[itype][isub];
                     data.avail -= amount;
