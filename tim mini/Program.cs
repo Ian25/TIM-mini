@@ -628,7 +628,7 @@ PhysicalGunObject/
                         isub = isub.ToUpper();
 
                         // update amounts
-                        amount = (long)((double)stack.Amount * 1e6);
+                        amount = stack.Amount.ToIntSafe();
                         typeAmount[itype] += amount;
                         data = typeSubData[itype][isub];
                         data.amount += amount;
@@ -659,7 +659,7 @@ PhysicalGunObject/
                     itype = "" + stack.Type.ToString();
                     itype = itype.Substring(itype.LastIndexOf('_') + 1).ToUpper();
                     isub = stack.Type.SubtypeId.ToString().ToUpper();
-                    amount = (long)((double)stack.Amount * 1e6);
+                    amount = stack.Amount.ToIntSafe();
                     typeAmount[itype] -= amount;
                     typeSubData[itype][isub].amount -= amount;
                 }
@@ -674,7 +674,7 @@ PhysicalGunObject/
                     itype = "" + stack.Type.ToString();
                     itype = itype.Substring(itype.LastIndexOf('_') + 1).ToUpper();
                     isub = stack.Type.SubtypeId.ToString().ToUpper();
-                    amount = (long)((double)stack.Amount * 1e6);
+                    amount = stack.Amount.ToIntSafe();
                     data = typeSubData[itype][isub];
                     data.avail -= amount;
                     data.locked += amount;
@@ -1615,6 +1615,8 @@ PhysicalGunObject/
 
         long TransferItem(string itype, string isub, long amount, IMyInventory fromInven, IMyInventory toInven)
         {
+
+            double dbAmount = Convert.ToDouble(amount);
             bool debug = debugLogic.Contains("sorting");
             int s;
             VRage.MyFixedPoint remaining, moved;
@@ -1623,14 +1625,14 @@ PhysicalGunObject/
             string stype, ssub;
             List<MyInventoryItem> stackTransfer = new List<MyInventoryItem>();
             List<MyInventoryItem> stackAfterTransfer = new List<MyInventoryItem>();
-            remaining = (VRage.MyFixedPoint)(amount / 1e6);
+            remaining = (VRage.MyFixedPoint)dbAmount;
             fromInven.GetItems(stackTransfer,null);
             s = Math.Min(typeSubData[itype][isub].invenSlot[fromInven], stackTransfer.Count);
 
 
             while (remaining > 0 & s-- > 0)
             {
-                stype = "" + stackTransfer[s].Type.ToString();
+                stype = stackTransfer[s].Type.ToString();
                 stype = stype.Substring(stype.LastIndexOf('_') + 1).ToUpper();
                 ssub = stackTransfer[s].Type.SubtypeId.ToString().ToUpper();
                 if (stype == itype & ssub == isub)
@@ -1644,7 +1646,7 @@ PhysicalGunObject/
                         if (remaining < 0)
                             remaining = 0;
                     }
-                    else if (fromInven.TransferItemTo(toInven, s, null, true, remaining))
+                    else if (fromInven.TransferItemTo(toInven, stackTransfer[s], remaining))
                     {
                         fromInven.GetItems(stackAfterTransfer,null);
                         if (s < stackAfterTransfer.Count && stackAfterTransfer[s].ItemId == id)
