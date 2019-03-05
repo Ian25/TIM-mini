@@ -1467,6 +1467,7 @@ PhysicalGunObject/
                 {
                     foreach (ItemData data in typeSubData[itype].Values)
                     {
+                       
                         if (data.avail > 0L)
                             debugText.Add("No place to put " + GetShorthand(data.avail) + " " + typeLabel[itype] + "/" + subLabel[data.isub] + ", containers may be full");
                     }
